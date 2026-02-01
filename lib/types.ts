@@ -36,15 +36,14 @@ export const AGENTS: AgentConfig[] = [
     sheetId: '1GklUyZ6l7IOL3oL1uPbWVAqSvOB3WyLDHNrvYQrXpqw',
     color: 'blue',
   },
-  // Add more agents here:
-  // {
-  //   id: 'otro-agente',
-  //   name: 'Nombre Agente',
-  //   emoji: '🤖',
-  //   subtitle: 'Descripción del agente',
-  //   sheetId: 'SHEET_ID_HERE',
-  //   color: 'emerald',
-  // },
+  {
+    id: 'sebastian',
+    name: 'Sebastián García',
+    emoji: '🤖',
+    subtitle: 'Agente IA',
+    sheetId: '1C20UTdWutzBoS6FISpWbGz_xAhgp12fAhwETmX4eeVY',
+    color: 'emerald',
+  },
 ];
 
 export const CATEGORY_EMOJI: Record<Categoria, string> = {
