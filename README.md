@@ -1,36 +1,161 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+# 📋 Panel de Control — María Mejía
 
-## Getting Started
+Kanban board visual para el seguimiento de tareas de María, la asistente IA de **Comando Construcciones**.
 
-First, run the development server:
+![Status](https://img.shields.io/badge/status-production-green)
+![Next.js](https://img.shields.io/badge/Next.js-16.1.6-black)
+![TypeScript](https://img.shields.io/badge/TypeScript-5-blue)
+
+## 🚀 Características
+
+- **📊 Kanban Board Interactivo** — 5 columnas por estado (Backlog, Pendiente, En Progreso, Completada, Bloqueada)
+- **📈 Dashboard de Métricas** — Estadísticas en tiempo real sobre productividad y costos
+- **📝 Vista de Lista** — Tabla ordenable con todas las tareas
+- **🔍 Filtros Avanzados** — Por categoría, prioridad, origen y búsqueda de texto
+- **🔄 Auto-refresh** — Actualización automática cada 30 segundos
+- **📱 Responsive Design** — Optimizado para móvil (iPhone de Don Claudio)
+- **🎨 Dark Mode** — Tema oscuro profesional con colores por categoría
+
+## 🛠️ Stack Tecnológico
+
+- **Frontend:** Next.js 16 (App Router) + TypeScript
+- **Styling:** Tailwind CSS
+- **Base de Datos:** Google Sheets (público, solo lectura)
+- **Deploy:** Vercel (auto-deploy on push)
+- **Backend:** Sin servidor — frontend puro leyendo CSV público
+
+## 📊 Fuente de Datos
+
+El board lee datos en tiempo real desde un Google Sheet público:
+
+- **Sheet ID:** `1GklUyZ6l7IOL3oL1uPbWVAqSvOB3WyLDHNrvYQrXpqw`
+- **Formato:** CSV export
+- **Actualización:** María actualiza el sheet via script Python
+
+[Ver el Sheet →](https://docs.google.com/spreadsheets/d/1GklUyZ6l7IOL3oL1uPbWVAqSvOB3WyLDHNrvYQrXpqw)
+
+## 🏃 Desarrollo Local
 
 ```bash
+# Clonar el repo
+git clone https://github.com/comandoconstrucciones/comando-kanban.git
+cd comando-kanban
+
+# Instalar dependencias
+npm install
+
+# Desarrollo
 npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
+
+# Build de producción
+npm run build
+npm start
 ```
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+El sitio estará disponible en `http://localhost:3000`
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+## 📂 Estructura del Proyecto
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+```
+├── app/
+│   ├── page.tsx           # Kanban Board (home)
+│   ├── dashboard/         # Dashboard con métricas
+│   ├── list/              # Vista de lista/tabla
+│   └── layout.tsx         # Layout principal
+├── components/
+│   ├── KanbanBoard.tsx    # Lógica principal del Kanban
+│   ├── KanbanColumn.tsx   # Columna por estado
+│   └── TaskCard.tsx       # Card individual de tarea
+├── lib/
+│   ├── types.ts           # Tipos TypeScript
+│   └── api.ts             # Fetch y parse de datos
+└── public/
+```
 
-## Learn More
+## 🎨 Categorías y Emojis
 
-To learn more about Next.js, take a look at the following resources:
+| Categoría | Emoji | Color |
+|-----------|-------|-------|
+| Administración | 📅 | Azul |
+| Finanzas | 💰 | Verde |
+| Proyectos | 🏗️ | Naranja |
+| Marketing | 📱 | Rosa |
+| Tech | 💻 | Morado |
+| Legal/RRHH | 📋 | Amarillo |
+| Comunicación | 📞 | Cyan |
+| Sistema | 🔧 | Rojo |
 
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
+## 🔧 Configuración
 
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
+El Sheet ID está hardcodeado en `lib/api.ts`. Si necesitas cambiarlo:
 
-## Deploy on Vercel
+```typescript
+// lib/api.ts
+const SHEET_ID = 'TU_NUEVO_SHEET_ID';
+```
 
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
+No se requieren variables de entorno ni API keys — el Sheet es público.
 
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+## 🚢 Deploy en Vercel
+
+[![Deploy with Vercel](https://vercel.com/button)](https://vercel.com/new/clone?repository-url=https://github.com/comandoconstrucciones/comando-kanban)
+
+O manual:
+1. Conectar repo en [vercel.com](https://vercel.com)
+2. Importar proyecto
+3. Deploy automático ✅
+
+## 🐍 Script Python Helper
+
+María actualiza el board usando `kanban_update.py`:
+
+```python
+from scripts.kanban_update import add_task, complete_task
+
+# Agregar tarea
+task_id = add_task(
+    titulo="Revisar facturas",
+    categoria="Finanzas",
+    prioridad="alta",
+    origen="telegram"
+)
+
+# Completar con métricas
+complete_task(task_id, duracion_seg=1200, costo_usd=0.10)
+```
+
+Ver documentación completa en `/root/clawd/asistente/memory/kanban-setup.md`
+
+## 📱 Vistas Disponibles
+
+### 1. Kanban Board (`/`)
+Vista principal con columnas drag-and-drop style (visual only, no reordenamiento aún).
+
+### 2. Dashboard (`/dashboard`)
+Métricas y estadísticas:
+- Total de tareas
+- Tareas completadas (%)
+- Costo y tiempo total
+- Distribución por categoría y prioridad
+
+### 3. Lista (`/list`)
+Tabla ordenable con todas las tareas y filtros.
+
+## 🎯 Roadmap
+
+- [ ] Drag & drop funcional entre columnas
+- [ ] Edición inline de tareas
+- [ ] Webhooks para notificaciones
+- [ ] Gráficos avanzados (Chart.js)
+- [ ] Exportar a PDF/Excel
+- [ ] PWA con offline support
+
+## 📄 Licencia
+
+Propiedad de **Comando Construcciones**.  
+Uso interno únicamente.
+
+---
+
+**Desarrollado con 💙 por María Mejía**  
+*Asistente IA de Comando Construcciones*
