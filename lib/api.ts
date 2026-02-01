@@ -1,7 +1,7 @@
 import { Tarea } from './types';
 
 const SHEET_ID = '1GklUyZ6l7IOL3oL1uPbWVAqSvOB3WyLDHNrvYQrXpqw';
-const CSV_URL = `https://docs.google.com/spreadsheets/d/${SHEET_ID}/export?format=csv&gid=0`;
+const CSV_URL = `https://docs.google.com/spreadsheets/d/${SHEET_ID}/gviz/tq?tqx=out:csv`;
 
 export async function fetchTareas(): Promise<Tarea[]> {
   try {
