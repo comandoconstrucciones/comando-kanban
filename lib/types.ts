@@ -18,6 +18,35 @@ export interface Tarea {
   notas: string;
 }
 
+export interface AgentConfig {
+  id: string;
+  name: string;
+  emoji: string;
+  subtitle: string;
+  sheetId: string;
+  color: string; // tailwind accent color
+}
+
+export const AGENTS: AgentConfig[] = [
+  {
+    id: 'maria',
+    name: 'María Mejía',
+    emoji: '💼',
+    subtitle: 'Asistente IA de Comando Construcciones',
+    sheetId: '1GklUyZ6l7IOL3oL1uPbWVAqSvOB3WyLDHNrvYQrXpqw',
+    color: 'blue',
+  },
+  // Add more agents here:
+  // {
+  //   id: 'otro-agente',
+  //   name: 'Nombre Agente',
+  //   emoji: '🤖',
+  //   subtitle: 'Descripción del agente',
+  //   sheetId: 'SHEET_ID_HERE',
+  //   color: 'emerald',
+  // },
+];
+
 export const CATEGORY_EMOJI: Record<Categoria, string> = {
   'Administración': '📅',
   'Finanzas': '💰',

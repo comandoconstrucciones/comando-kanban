@@ -7,21 +7,23 @@ import KanbanColumn from './KanbanColumn';
 
 const ESTADOS: Estado[] = ['backlog', 'pendiente', 'en_progreso', 'completada', 'bloqueada'];
 
-export default function KanbanBoard() {
+interface KanbanBoardProps {
+  agentId?: string;
+}
+
+export default function KanbanBoard({ agentId }: KanbanBoardProps) {
   const [tareas, setTareas] = useState<Tarea[]>([]);
   const [loading, setLoading] = useState(true);
   const [lastUpdate, setLastUpdate] = useState<Date>(new Date());
   
-  // Filters
   const [searchTerm, setSearchTerm] = useState('');
   const [filterCategoria, setFilterCategoria] = useState<Categoria | ''>('');
   const [filterPrioridad, setFilterPrioridad] = useState<Prioridad | ''>('');
   const [filterOrigen, setFilterOrigen] = useState<Origen | ''>('');
   
-  // Load data
   const loadTareas = async () => {
     setLoading(true);
-    const data = await fetchTareas();
+    const data = await fetchTareas(agentId);
     setTareas(data);
     setLastUpdate(new Date());
     setLoading(false);
@@ -29,13 +31,10 @@ export default function KanbanBoard() {
   
   useEffect(() => {
     loadTareas();
-    
-    // Auto-refresh every 30 seconds
     const interval = setInterval(loadTareas, 30000);
     return () => clearInterval(interval);
-  }, []);
+  }, [agentId]); // reload when agent changes
   
-  // Apply filters
   const filteredTareas = tareas.filter(tarea => {
     if (searchTerm && !tarea.titulo.toLowerCase().includes(searchTerm.toLowerCase()) && 
         !tarea.descripcion.toLowerCase().includes(searchTerm.toLowerCase())) {
@@ -52,7 +51,6 @@ export default function KanbanBoard() {
       {/* Filters */}
       <div className="bg-slate-800/50 backdrop-blur-sm border border-slate-700 rounded-lg p-4 mb-6">
         <div className="flex flex-wrap gap-3">
-          {/* Search */}
           <input
             type="text"
             placeholder="🔍 Buscar tareas..."
@@ -61,7 +59,6 @@ export default function KanbanBoard() {
             className="flex-1 min-w-[200px] bg-slate-900 text-white border border-slate-600 rounded px-3 py-2 focus:outline-none focus:border-blue-500"
           />
           
-          {/* Category Filter */}
           <select
             value={filterCategoria}
             onChange={(e) => setFilterCategoria(e.target.value as Categoria | '')}
@@ -78,7 +75,6 @@ export default function KanbanBoard() {
             <option value="Sistema">🔧 Sistema</option>
           </select>
           
-          {/* Priority Filter */}
           <select
             value={filterPrioridad}
             onChange={(e) => setFilterPrioridad(e.target.value as Prioridad | '')}
@@ -90,7 +86,6 @@ export default function KanbanBoard() {
             <option value="baja">🟢 Baja</option>
           </select>
           
-          {/* Origin Filter */}
           <select
             value={filterOrigen}
             onChange={(e) => setFilterOrigen(e.target.value as Origen | '')}
@@ -103,7 +98,6 @@ export default function KanbanBoard() {
             <option value="manual">✍️ Manual</option>
           </select>
           
-          {/* Refresh Button */}
           <button
             onClick={loadTareas}
             disabled={loading}
@@ -113,7 +107,6 @@ export default function KanbanBoard() {
           </button>
         </div>
         
-        {/* Stats */}
         <div className="mt-3 text-sm text-slate-400 flex items-center gap-4">
           <span>Total: {filteredTareas.length} tareas</span>
           <span>•</span>

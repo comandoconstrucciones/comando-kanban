@@ -1,22 +1,28 @@
 'use client';
 
-import { useState, useEffect } from 'react';
-import { Tarea, CATEGORY_EMOJI } from '@/lib/types';
-import { fetchTareas } from '@/lib/api';
+import { useState, useEffect, Suspense } from 'react';
+import { useSearchParams } from 'next/navigation';
+import { Tarea, CATEGORY_EMOJI, AGENTS } from '@/lib/types';
+import { fetchTareas, getAgent, getDefaultAgentId } from '@/lib/api';
 import Link from 'next/link';
+import AgentSelector from '@/components/AgentSelector';
 
-export default function Dashboard() {
+function DashboardInner() {
+  const searchParams = useSearchParams();
+  const [agentId, setAgentId] = useState(searchParams.get('agent') || getDefaultAgentId());
+  const agent = getAgent(agentId);
   const [tareas, setTareas] = useState<Tarea[]>([]);
   const [loading, setLoading] = useState(true);
   
   useEffect(() => {
     const loadData = async () => {
-      const data = await fetchTareas();
+      setLoading(true);
+      const data = await fetchTareas(agentId);
       setTareas(data);
       setLoading(false);
     };
     loadData();
-  }, []);
+  }, [agentId]);
   
   if (loading) {
     return (
@@ -26,7 +32,6 @@ export default function Dashboard() {
     );
   }
   
-  // Calculate metrics
   const totalTareas = tareas.length;
   const completadas = tareas.filter(t => t.estado === 'completada').length;
   const enProgreso = tareas.filter(t => t.estado === 'en_progreso').length;
@@ -41,13 +46,11 @@ export default function Dashboard() {
     .filter(t => t.estado === 'completada')
     .reduce((sum, t) => sum + t.duracion_seg, 0);
   
-  // By category
   const byCategoria = tareas.reduce((acc, t) => {
     acc[t.categoria] = (acc[t.categoria] || 0) + 1;
     return acc;
   }, {} as Record<string, number>);
   
-  // By priority
   const byPrioridad = tareas.reduce((acc, t) => {
     acc[t.prioridad] = (acc[t.prioridad] || 0) + 1;
     return acc;
@@ -57,32 +60,34 @@ export default function Dashboard() {
     <main className="min-h-screen bg-gradient-to-br from-slate-900 via-slate-800 to-slate-900">
       <header className="bg-slate-900/80 backdrop-blur-sm border-b border-slate-700">
         <div className="container mx-auto px-4 py-4">
-          <div className="flex items-center justify-between">
+          <div className="flex items-center justify-between flex-wrap gap-3">
             <div>
               <h1 className="text-2xl font-bold text-white flex items-center gap-2">
-                <span>📊 Dashboard — María Mejía</span>
+                <span>📊 Dashboard — {agent.name}</span>
               </h1>
             </div>
-            <div className="flex gap-3">
-              <Link
-                href="/"
-                className="px-4 py-2 bg-slate-800 hover:bg-slate-700 text-white rounded font-medium transition-colors border border-slate-700"
-              >
-                📋 Kanban
-              </Link>
-              <Link
-                href="/list"
-                className="px-4 py-2 bg-slate-800 hover:bg-slate-700 text-white rounded font-medium transition-colors border border-slate-700"
-              >
-                📝 Lista
-              </Link>
+            <div className="flex items-center gap-3 flex-wrap">
+              <AgentSelector currentAgentId={agentId} onAgentChange={setAgentId} />
+              <div className="flex gap-2">
+                <Link
+                  href={`/?agent=${agentId}`}
+                  className="px-4 py-2 bg-slate-800 hover:bg-slate-700 text-white rounded font-medium transition-colors border border-slate-700"
+                >
+                  📋 Kanban
+                </Link>
+                <Link
+                  href={`/list?agent=${agentId}`}
+                  className="px-4 py-2 bg-slate-800 hover:bg-slate-700 text-white rounded font-medium transition-colors border border-slate-700"
+                >
+                  📝 Lista
+                </Link>
+              </div>
             </div>
           </div>
         </div>
       </header>
       
       <div className="container mx-auto px-4 py-6">
-        {/* Key Metrics */}
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
           <div className="bg-slate-800/50 backdrop-blur-sm border border-slate-700 rounded-lg p-6">
             <div className="text-slate-400 text-sm mb-2">Total Tareas</div>
@@ -113,7 +118,6 @@ export default function Dashboard() {
           </div>
         </div>
         
-        {/* Cost and Time */}
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-6">
           <div className="bg-slate-800/50 backdrop-blur-sm border border-slate-700 rounded-lg p-6">
             <div className="text-slate-400 text-sm mb-2">Costo Total (Completadas)</div>
@@ -130,7 +134,6 @@ export default function Dashboard() {
           </div>
         </div>
         
-        {/* By Category */}
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
           <div className="bg-slate-800/50 backdrop-blur-sm border border-slate-700 rounded-lg p-6">
             <h2 className="text-xl font-bold text-white mb-4">Por Categoría</h2>
@@ -157,7 +160,6 @@ export default function Dashboard() {
             </div>
           </div>
           
-          {/* By Priority */}
           <div className="bg-slate-800/50 backdrop-blur-sm border border-slate-700 rounded-lg p-6">
             <h2 className="text-xl font-bold text-white mb-4">Por Prioridad</h2>
             <div className="space-y-4">
@@ -190,5 +192,13 @@ export default function Dashboard() {
         </div>
       </div>
     </main>
+  );
+}
+
+export default function Dashboard() {
+  return (
+    <Suspense fallback={<div className="min-h-screen bg-slate-900 flex items-center justify-center text-white">Cargando...</div>}>
+      <DashboardInner />
+    </Suspense>
   );
 }

@@ -1,12 +1,24 @@
-import { Tarea } from './types';
+import { Tarea, AgentConfig, AGENTS } from './types';
 
-const SHEET_ID = '1GklUyZ6l7IOL3oL1uPbWVAqSvOB3WyLDHNrvYQrXpqw';
-const CSV_URL = `https://docs.google.com/spreadsheets/d/${SHEET_ID}/gviz/tq?tqx=out:csv`;
+function getCsvUrl(sheetId: string): string {
+  return `https://docs.google.com/spreadsheets/d/${sheetId}/gviz/tq?tqx=out:csv`;
+}
 
-export async function fetchTareas(): Promise<Tarea[]> {
+export function getAgent(agentId: string): AgentConfig {
+  return AGENTS.find(a => a.id === agentId) || AGENTS[0];
+}
+
+export function getDefaultAgentId(): string {
+  return AGENTS[0].id;
+}
+
+export async function fetchTareas(agentId?: string): Promise<Tarea[]> {
+  const agent = agentId ? getAgent(agentId) : AGENTS[0];
+  const csvUrl = getCsvUrl(agent.sheetId);
+
   try {
-    const response = await fetch(CSV_URL, {
-      cache: 'no-store', // Always fetch fresh data
+    const response = await fetch(csvUrl, {
+      cache: 'no-store',
     });
     
     if (!response.ok) {
@@ -16,11 +28,9 @@ export async function fetchTareas(): Promise<Tarea[]> {
     const csvText = await response.text();
     const lines = csvText.split('\n');
     
-    // Skip header row
     const dataLines = lines.slice(1).filter(line => line.trim());
     
     const tareas: Tarea[] = dataLines.map(line => {
-      // Simple CSV parsing (handles quoted fields)
       const values: string[] = [];
       let current = '';
       let inQuotes = false;
@@ -37,7 +47,7 @@ export async function fetchTareas(): Promise<Tarea[]> {
           current += char;
         }
       }
-      values.push(current.trim()); // Last value
+      values.push(current.trim());
       
       return {
         id: values[0] || '',

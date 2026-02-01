@@ -1,11 +1,16 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, Suspense } from 'react';
+import { useSearchParams } from 'next/navigation';
 import { Tarea, CATEGORY_EMOJI, CATEGORY_COLORS, ESTADO_LABELS } from '@/lib/types';
-import { fetchTareas, getRelativeTime } from '@/lib/api';
+import { fetchTareas, getRelativeTime, getAgent, getDefaultAgentId } from '@/lib/api';
 import Link from 'next/link';
+import AgentSelector from '@/components/AgentSelector';
 
-export default function ListView() {
+function ListViewInner() {
+  const searchParams = useSearchParams();
+  const [agentId, setAgentId] = useState(searchParams.get('agent') || getDefaultAgentId());
+  const agent = getAgent(agentId);
   const [tareas, setTareas] = useState<Tarea[]>([]);
   const [loading, setLoading] = useState(true);
   const [sortBy, setSortBy] = useState<keyof Tarea>('fecha_solicitud');
@@ -13,12 +18,13 @@ export default function ListView() {
   
   useEffect(() => {
     const loadData = async () => {
-      const data = await fetchTareas();
+      setLoading(true);
+      const data = await fetchTareas(agentId);
       setTareas(data);
       setLoading(false);
     };
     loadData();
-  }, []);
+  }, [agentId]);
   
   if (loading) {
     return (
@@ -28,21 +34,16 @@ export default function ListView() {
     );
   }
   
-  // Sort tasks
   const sortedTareas = [...tareas].sort((a, b) => {
     const aVal = a[sortBy];
     const bVal = b[sortBy];
     
     if (typeof aVal === 'string' && typeof bVal === 'string') {
-      return sortOrder === 'asc' 
-        ? aVal.localeCompare(bVal)
-        : bVal.localeCompare(aVal);
+      return sortOrder === 'asc' ? aVal.localeCompare(bVal) : bVal.localeCompare(aVal);
     }
-    
     if (typeof aVal === 'number' && typeof bVal === 'number') {
       return sortOrder === 'asc' ? aVal - bVal : bVal - aVal;
     }
-    
     return 0;
   });
   
@@ -59,25 +60,28 @@ export default function ListView() {
     <main className="min-h-screen bg-gradient-to-br from-slate-900 via-slate-800 to-slate-900">
       <header className="bg-slate-900/80 backdrop-blur-sm border-b border-slate-700">
         <div className="container mx-auto px-4 py-4">
-          <div className="flex items-center justify-between">
+          <div className="flex items-center justify-between flex-wrap gap-3">
             <div>
               <h1 className="text-2xl font-bold text-white flex items-center gap-2">
-                <span>📝 Lista de Tareas — María Mejía</span>
+                <span>📝 Lista — {agent.name}</span>
               </h1>
             </div>
-            <div className="flex gap-3">
-              <Link
-                href="/"
-                className="px-4 py-2 bg-slate-800 hover:bg-slate-700 text-white rounded font-medium transition-colors border border-slate-700"
-              >
-                📋 Kanban
-              </Link>
-              <Link
-                href="/dashboard"
-                className="px-4 py-2 bg-slate-800 hover:bg-slate-700 text-white rounded font-medium transition-colors border border-slate-700"
-              >
-                📊 Dashboard
-              </Link>
+            <div className="flex items-center gap-3 flex-wrap">
+              <AgentSelector currentAgentId={agentId} onAgentChange={setAgentId} />
+              <div className="flex gap-2">
+                <Link
+                  href={`/?agent=${agentId}`}
+                  className="px-4 py-2 bg-slate-800 hover:bg-slate-700 text-white rounded font-medium transition-colors border border-slate-700"
+                >
+                  📋 Kanban
+                </Link>
+                <Link
+                  href={`/dashboard?agent=${agentId}`}
+                  className="px-4 py-2 bg-slate-800 hover:bg-slate-700 text-white rounded font-medium transition-colors border border-slate-700"
+                >
+                  📊 Dashboard
+                </Link>
+              </div>
             </div>
           </div>
         </div>
@@ -85,7 +89,6 @@ export default function ListView() {
       
       <div className="container mx-auto px-4 py-6">
         <div className="bg-slate-800/50 backdrop-blur-sm border border-slate-700 rounded-lg overflow-hidden">
-          {/* Table Header */}
           <div className="overflow-x-auto">
             <table className="w-full">
               <thead className="bg-slate-900/80 text-slate-300 text-sm">
@@ -107,12 +110,7 @@ export default function ListView() {
                   </th>
                   <th className="px-4 py-3 text-left">
                     <button onClick={() => handleSort('prioridad')} className="hover:text-white">
-                      Prioridad {sortBy === 'prioridad' && (sortOrder === 'asc' ? '↑' : '↓')}
-                    </button>
-                  </th>
-                  <th className="px-4 py-3 text-left">
-                    <button onClick={() => handleSort('origen')} className="hover:text-white">
-                      Origen {sortBy === 'origen' && (sortOrder === 'asc' ? '↑' : '↓')}
+                      Pri {sortBy === 'prioridad' && (sortOrder === 'asc' ? '↑' : '↓')}
                     </button>
                   </th>
                   <th className="px-4 py-3 text-right">
@@ -133,9 +131,7 @@ export default function ListView() {
                     <td className="px-4 py-3">
                       <div className="text-white font-medium">{tarea.titulo}</div>
                       {tarea.descripcion && (
-                        <div className="text-slate-400 text-sm mt-1 line-clamp-1">
-                          {tarea.descripcion}
-                        </div>
+                        <div className="text-slate-400 text-sm mt-1 line-clamp-1">{tarea.descripcion}</div>
                       )}
                     </td>
                     <td className="px-4 py-3">
@@ -160,16 +156,9 @@ export default function ListView() {
                         {tarea.prioridad === 'alta' ? '🔴' : tarea.prioridad === 'media' ? '🟡' : '🟢'}
                       </span>
                     </td>
-                    <td className="px-4 py-3 text-slate-300 text-sm">
-                      {tarea.origen === 'telegram' ? '💬' : 
-                       tarea.origen === 'heartbeat' ? '💓' :
-                       tarea.origen === 'automatico' ? '🤖' : '✍️'} {tarea.origen}
-                    </td>
                     <td className="px-4 py-3 text-right">
                       {tarea.costo_usd > 0 ? (
-                        <span className="font-mono text-emerald-400">
-                          ${tarea.costo_usd.toFixed(2)}
-                        </span>
+                        <span className="font-mono text-emerald-400">${tarea.costo_usd.toFixed(2)}</span>
                       ) : (
                         <span className="text-slate-600">-</span>
                       )}
@@ -183,7 +172,6 @@ export default function ListView() {
             </table>
           </div>
           
-          {/* Footer */}
           <div className="bg-slate-900/50 px-4 py-3 border-t border-slate-700">
             <div className="text-sm text-slate-400">
               Total: {tareas.length} tareas
@@ -192,5 +180,13 @@ export default function ListView() {
         </div>
       </div>
     </main>
+  );
+}
+
+export default function ListView() {
+  return (
+    <Suspense fallback={<div className="min-h-screen bg-slate-900 flex items-center justify-center text-white">Cargando...</div>}>
+      <ListViewInner />
+    </Suspense>
   );
 }
